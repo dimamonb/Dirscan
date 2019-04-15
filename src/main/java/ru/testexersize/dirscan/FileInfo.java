@@ -4,10 +4,10 @@ import java.util.Date;
 
 public class FileInfo {
     private String fileNameAndPath;
-    private Date fileDate;
-    private int fileSize;
+    private String fileDate;
+    private long fileSize;
 
-    public FileInfo(String fileNameAndPath, Date fileDate, int fileSize) {
+    public FileInfo(String fileNameAndPath, String fileDate, long fileSize) {
         this.fileNameAndPath = fileNameAndPath;
         this.fileDate = fileDate;
         this.fileSize = fileSize;

@@ -7,49 +7,32 @@ import ru.testexersize.dirscan.utils.Prefix;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.regex.MatchResult;
 
 public class Main {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
 
         if (args.length == 0){
             System.out.println("Params not specified. Usage:");
             System.out.println("dirscan foldertosearch - folderToExclude -F filesToExclude");
             return;
         }
+
         CommandLineOptions commandLineOptions = new CommandLineOptions(args);
-        commandLineOptions.parseCommand();
 
+        Map<String, List<String>> filesAndFolders = commandLineOptions.parseCommand();
 
-        System.out.println(Prefix.valueOf("DASH"));
+        ScanDirectories sd = new ScanDirectories(filesAndFolders);
 
-//        final Map<String, List<String>> params = new HashMap<>();
-//
-//        List<String> options = new ArrayList<>();
-//
-//        for (int i = 0; i < args.length; i++) {
-//            final String a = args[i];
-//
-//            if (a.equals("-")) {
-//                if (a.length() < 2) {
-//                    System.err.println("Error at argument " + a);
-//                    return;
-//                }
-//
-//
-//                params.put(a.substring(1), options);
-//            }
-//            else if (options != null) {
-//                options.add(a);
-//            }
-//            else {
-//                params.put(a,options);
-//                return;
-//            }
-//        }
-
+        for(String s: filesAndFolders.get("s")){
+            Path walkDir = Paths.get(s);
+            Files.walkFileTree(walkDir,sd);
+        }
 
     }
 }
