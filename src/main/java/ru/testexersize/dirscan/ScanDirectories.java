@@ -1,7 +1,8 @@
 package ru.testexersize.dirscan;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+
+import java.nio.charset.Charset;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.text.SimpleDateFormat;
@@ -12,7 +13,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class ScanDirectories extends SimpleFileVisitor<Path> {
-
+    private final String FILENAME = "scan_results.txt";
     Map<String, List<String>> excludeFilesAndFolders;
     List<FileInfo> fileInfoList = new ArrayList<>();
 
@@ -20,11 +21,27 @@ public class ScanDirectories extends SimpleFileVisitor<Path> {
         this.excludeFilesAndFolders = excludeFilesAndFolders;
     }
 
+    public void writeFileInfoToFile() {
+
+        Path fileP = Paths.get(FILENAME);
+        Charset charset = Charset.forName("utf-8");
+
+        try (BufferedWriter writer = Files.newBufferedWriter(fileP, charset)) {
+            for (FileInfo fileInfo : fileInfoList) {
+                writer.write(fileInfo.toString());
+                writer.newLine();
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     @Override
     public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-        for(String s: excludeFilesAndFolders.get("-")){
+        for (String s : excludeFilesAndFolders.get("-")) {
             Path f = Paths.get(s);
-            if(dir.getFileName().toString().equals(f.getFileName().toString())){
+            if (dir.getFileName().toString().equals(f.getFileName().toString())) {
                 return FileVisitResult.SKIP_SUBTREE;
             }
         }
@@ -34,10 +51,10 @@ public class ScanDirectories extends SimpleFileVisitor<Path> {
 
     @Override
     public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-        //System.out.println(file.toString() + " -------" + attrs.creationTime()  + " -------" + attrs.size());
+        System.out.println(file.toString() + " -------" + attrs.creationTime() + " -------" + attrs.size());
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
-        fileInfoList.add(new FileInfo(file.toString(),simpleDateFormat.format(attrs.lastModifiedTime().toMillis()),attrs.size()));
+        fileInfoList.add(new FileInfo(file.toString(), simpleDateFormat.format(attrs.lastModifiedTime().toMillis()), attrs.size()));
         return FileVisitResult.CONTINUE;
     }
 

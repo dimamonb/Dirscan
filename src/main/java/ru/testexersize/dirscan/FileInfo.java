@@ -15,10 +15,10 @@ public class FileInfo {
 
     @Override
     public String toString() {
-        return "[" +
-                "file='" + fileNameAndPath + '\'' +
-                "date=" + fileDate + '\'' +
-                "size=" + fileSize +
+        return "[" + "\n" +
+                "file='" + fileNameAndPath + "\n" +
+                "date=" + fileDate + "\n" +
+                "size=" + fileSize + "\n" +
                 ']';
     }
 }

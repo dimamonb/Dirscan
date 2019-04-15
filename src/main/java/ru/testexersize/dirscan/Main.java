@@ -33,6 +33,6 @@ public class Main {
             Path walkDir = Paths.get(s);
             Files.walkFileTree(walkDir,sd);
         }
-
+        sd.writeFileInfoToFile();
     }
 }
