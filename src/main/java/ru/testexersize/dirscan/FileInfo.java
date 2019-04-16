@@ -2,7 +2,7 @@ package ru.testexersize.dirscan;
 
 import java.util.Date;
 
-public class FileInfo {
+public class FileInfo implements Comparable<FileInfo> {
     private String fileNameAndPath;
     private String fileDate;
     private long fileSize;
@@ -15,10 +15,15 @@ public class FileInfo {
 
     @Override
     public String toString() {
-        return "[" + "\n" +
+        return "[" +
                 "file='" + fileNameAndPath + "\n" +
                 "date=" + fileDate + "\n" +
-                "size=" + fileSize + "\n" +
-                ']';
+                "size=" + fileSize +
+                "][";
+    }
+
+    @Override
+    public int compareTo(FileInfo o) {
+        return this.fileDate.compareTo(o.fileDate);
     }
 }

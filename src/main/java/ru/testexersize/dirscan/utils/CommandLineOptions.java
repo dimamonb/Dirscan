@@ -4,33 +4,34 @@ import java.util.*;
 
 public class CommandLineOptions {
 
-
     private String[] args;
-    private List<String> validCommands = Arrays.asList(" ","-", "-F");
+    private List<String> validCommands = Arrays.asList("-","-f", "-fe");
     private int cmdIndex;
-    Map<String, List<String>> returnCommandsAndValues = new HashMap<>();
-    List<String> paths ;
+    private Map<String, List<String>> returnCommandsAndValues = new HashMap<>(); //
+    private List<String> paths; //Список папок для поиска и исключения
+
+
+
     public CommandLineOptions(String[] args) {
-        //this.args = Arrays.asList(args);
         this.args = args;
     }
 
     public void initFirstElementsOfMap(){
         paths = new ArrayList<>();
         for (int i = 0; i < this.args.length; i++) {
-            if(args[i].startsWith("-")) {
+            if(validCommands.contains(args[i])) {
                 cmdIndex = i;
                 break;
             }
             paths.add(args[i]);
-            returnCommandsAndValues.put("s",paths);
-
         }
+        returnCommandsAndValues.put("s",paths);
     }
+
     public Map<String, List<String>> parseCommand(){
         initFirstElementsOfMap();
         for (int i = cmdIndex; i < this.args.length; i++) {
-            if(args[i].startsWith("-")){
+            if(validCommands.contains(args[i])){
                 paths = new ArrayList<>();
                 returnCommandsAndValues.put(args[i].substring(0), paths);
             } else {
@@ -39,4 +40,5 @@ public class CommandLineOptions {
         }
         return returnCommandsAndValues;
     }
+
 }
