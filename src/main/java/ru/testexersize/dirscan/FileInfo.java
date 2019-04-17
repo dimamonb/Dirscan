@@ -19,7 +19,7 @@ public class FileInfo implements Comparable<FileInfo> {
                 "file='" + fileNameAndPath + "\n" +
                 "date=" + fileDate + "\n" +
                 "size=" + fileSize +
-                "][";
+                "]";
     }
 
     @Override

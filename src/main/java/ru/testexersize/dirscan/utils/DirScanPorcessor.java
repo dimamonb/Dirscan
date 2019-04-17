@@ -4,7 +4,6 @@ import ru.testexersize.dirscan.ScanDirectories;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -22,7 +21,7 @@ public class DirScanPorcessor implements Callable<String> {
     @Override
     public String call() throws Exception {
         ScanDirectories sd = new ScanDirectories(filesAndFolders);
-        Files.walkFileTree(walkDir,sd);
-        return "Finised";
+        Files.walkFileTree(walkDir, sd);
+        return "Finished";
     }
 }

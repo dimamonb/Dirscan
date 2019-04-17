@@ -14,17 +14,10 @@ public class ScanDirectories extends SimpleFileVisitor<Path> {
     private final String FILENAME = "scan_results.txt";
 
     private Map<String, List<String>> excludeFilesAndFolders;
-
-
-
     private List<FileInfo> fileInfoList = new ArrayList<>();
 
     public ScanDirectories(Map<String, List<String>> excludeFilesAndFolders) {
         this.excludeFilesAndFolders = excludeFilesAndFolders;
-    }
-
-    public List<FileInfo> getFileInfoList() {
-        return fileInfoList;
     }
 
     public void writefoToFile() {
@@ -36,6 +29,7 @@ public class ScanDirectories extends SimpleFileVisitor<Path> {
             for (FileInfo fileInfo : fileInfoList) {
                 writer.write(fileInfo.toString());
                 writer.newLine();
+
             }
 
         } catch (IOException e) {
@@ -55,11 +49,8 @@ public class ScanDirectories extends SimpleFileVisitor<Path> {
     @Override
     public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-
         FileDirFilter fileDirFilter = new FileDirFilter(excludeFilesAndFolders);
-        if(!fileDirFilter.accept(file.toFile())) {
-            fileInfoList.add(new FileInfo(file.toString(), simpleDateFormat.format(attrs.lastModifiedTime().toMillis()), attrs.size()));
-        }
+        fileInfoList.add(new FileInfo(file.toString(), simpleDateFormat.format(attrs.lastModifiedTime().toMillis()), attrs.size()));
         return FileVisitResult.CONTINUE;
     }
 
