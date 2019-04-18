@@ -1,5 +1,6 @@
 package ru.testexersize.dirscan;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class FileInfo implements Comparable<FileInfo> {
@@ -15,15 +16,18 @@ public class FileInfo implements Comparable<FileInfo> {
 
     @Override
     public String toString() {
-        return "[" +
-                "file='" + fileNameAndPath + "\n" +
-                "date=" + fileDate + "\n" +
-                "size=" + fileSize +
-                "]";
+        StringBuilder retval = new StringBuilder(String.format("[\nfile=%s\ndate=%s\nsize=%s]",fileNameAndPath,fileDate,fileSize));
+        String text = String.format("[\nfile=%s\ndate=%s\nsize=%s]",fileNameAndPath,fileDate,fileSize);
+        String text1 = text.replace("[\n\r]", "");
+        return  text1;
+//                "[\nfile = " + fileNameAndPath + "\n" +
+//                "date = " + fileDate + "\n" +
+//                "size = " + fileSize +"\n" +
+//                "]";
     }
 
     @Override
     public int compareTo(FileInfo o) {
-        return this.fileDate.compareTo(o.fileDate);
+        return this.fileNameAndPath.compareTo(o.fileNameAndPath);
     }
 }
