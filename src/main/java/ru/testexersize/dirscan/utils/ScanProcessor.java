@@ -10,11 +10,17 @@ import java.util.*;
 
 import java.util.concurrent.RecursiveTask;
 
+/**
+ * Класс для сканирования папок.
+ * Для реализации моногопоточности используем RecursiveTask. Который позволяет нам разбить
+ * поиск на потоки(fork), а в конце собрать всё в кучу (join)
+ */
 public class ScanProcessor extends RecursiveTask<HashSet<FileInfo>> {
 
     private Path dir;
-
     private List<String> excludedDirs;
+    //Коллекция в которую записываем результаты сканирования. Используем HashSet. Упорядоченная коллекция.
+    //Быстрее добавлять элементы чем в TreeSet, т.к. реализована с помощью HashMap
     HashSet<FileInfo> fileInfoList = new HashSet<>();
 
     public ScanProcessor(Path dir, List<String> excludedDirs) {
@@ -22,14 +28,22 @@ public class ScanProcessor extends RecursiveTask<HashSet<FileInfo>> {
         this.excludedDirs = excludedDirs;
     }
 
-
+    /**
+     * В методе compute класса RecursiveTask осуществляем обход дерева папок. Для этого используем
+     * метод walkFileTree.
+     *
+      * @return
+     */
     @Override
     protected HashSet<FileInfo> compute() {
+
         final List<ScanProcessor> walks = new ArrayList<>();
-
-
         try {
             Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
+                /**
+                 * В этом методе исключаем папки из поиска если папка совпадает с переданными из main
+                 * FileVisitResult.SKIP_SUBTREE
+                 */
                 @Override
                 public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
                     if (!dir.equals(ScanProcessor.this.dir)) {
@@ -44,6 +58,14 @@ public class ScanProcessor extends RecursiveTask<HashSet<FileInfo>> {
                     return FileVisitResult.CONTINUE;
                 }
 
+                /**
+                 * Записываем в коллекцию найденные файлы. В этом методе можно реализовать фильтры для исключения файлов
+                 * по определенным параметрам.
+                  * @param file
+                 * @param attrs
+                 * @return
+                 * @throws IOException
+                 */
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -53,24 +75,18 @@ public class ScanProcessor extends RecursiveTask<HashSet<FileInfo>> {
 
                 @Override
                 public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
-                    return super.visitFileFailed(file, exc);
+                    ToLog.writeMessage(exc.getMessage());
+                    return FileVisitResult.CONTINUE;
                 }
 
                 @Override
                 public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-                    if (fileInfoList.size() != 0) {
-                       //
-                    }
-                    if (exc != null) {
-                        System.out.println("Error after process directory" + exc.getMessage());
-                    }
+
                     return FileVisitResult.CONTINUE;
                 }
             });
-
-
         } catch (IOException e) {
-            System.out.println("Error11: " + e.getMessage());;
+            ToLog.writeMessage(e.getMessage());
         }
         addResultsFromTasks(fileInfoList, walks);
         return fileInfoList;
