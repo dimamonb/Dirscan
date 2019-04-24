@@ -3,6 +3,7 @@ package ru.testexersize.dirscan;
 
 import ru.testexersize.dirscan.utils.CommandLineOptions;
 import ru.testexersize.dirscan.utils.ScanProcessor;
+import ru.testexersize.dirscan.utils.ScanProcessorBQ;
 import ru.testexersize.dirscan.utils.ToLog;
 
 import java.io.BufferedWriter;
@@ -13,7 +14,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.PriorityBlockingQueue;
 
 
 public class DirScanProgram {
@@ -34,7 +37,7 @@ public class DirScanProgram {
         Map<String, List<String>> filesAndFolders = commandLineOptions.parseCmdArgs();
         if(!validateArgs(filesAndFolders)) return;
 
-        ScanProcessor scanProcessor=null;
+        ScanProcessorBQ scanProcessor=null;
         ForkJoinPool forkJoinPool = new ForkJoinPool(MAX_TREADS);
 
         /**
@@ -49,40 +52,24 @@ public class DirScanProgram {
          */
         for (String s : filesAndFolders.get("-s")) {
             Path walkDir = Paths.get(s);
-            scanProcessor = new ScanProcessor(walkDir, filesAndFolders.get("-"));
+            scanProcessor = new ScanProcessorBQ(walkDir, filesAndFolders.get("-"));
             forkJoinPool.execute(scanProcessor);
         }
 
         forkJoinPool.shutdown();
 
-        HashSet<FileInfo> results = scanProcessor.join();
+        PriorityBlockingQueue<FileInfo> results = scanProcessor.join();
         System.out.println("\nFiles found: " + results.size());
         timer.cancel();
         /**
          * Записываем результаты в файл.
          */
-        writefoToFile(results);
+
     }
 
     //    ************************* UTILS **********************************//
 
-    /**
-     * Запись в файл
-     * @param fileInfoList
-     */
-    public static void writefoToFile(HashSet<FileInfo> fileInfoList) {
-        Path fileP = Paths.get(FILENAME);
-        Charset charset = Charset.forName("utf-8");
 
-        try (BufferedWriter writer = Files.newBufferedWriter(fileP, charset, StandardOpenOption.APPEND, StandardOpenOption.CREATE)) {
-             for (FileInfo fileInfo : fileInfoList) {
-                writer.write(fileInfo.toString());
-                //writer.newLine();
-            }
-        } catch (IOException e) {
-            ToLog.writeMessage(e.getMessage());
-        }
-    }
 
 
     public  static boolean validateArgs(Map<String, List<String>> commands){
@@ -93,8 +80,13 @@ public class DirScanProgram {
             }
         }
 
-        if(commands.get("-s").removeAll(commands.get("-"))){
+        if(commands.containsKey("-") && commands.get("-s").removeAll(commands.get("-"))){
             System.out.println("There are same folders to search and to exclude from search.");
+            return false;
+        }
+
+        if(!commands.containsKey("-s")){
+            System.out.println("You should specify commad for search");
             return false;
         }
         return true;

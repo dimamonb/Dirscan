@@ -8,8 +8,11 @@ import java.nio.charset.Charset;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.text.SimpleDateFormat;
-import java.util.*;
-
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.RecursiveTask;
 
@@ -18,15 +21,16 @@ import java.util.concurrent.RecursiveTask;
  * Для реализации моногопоточности используем RecursiveTask. Который позволяет нам разбить
  * поиск на потоки(fork), а в конце собрать всё в кучу (join)
  */
-public class ScanProcessor extends RecursiveTask<HashSet<FileInfo>> {
-
+public class ScanProcessorBQ extends RecursiveTask<PriorityBlockingQueue<FileInfo>> {
+    private static final String FILENAME = "scan_results.txt";
     private Path dir;
     private List<String> excludedDirs;
     //Коллекция в которую записываем результаты сканирования. Используем HashSet. Упорядоченная коллекция.
     //Быстрее добавлять элементы чем в TreeSet, т.к. реализована с помощью HashMap
-    HashSet<FileInfo> fileInfoList = new HashSet<>();
+    //HashSet<FileInfo> fileInfoList = new HashSet<>();
+    PriorityBlockingQueue<FileInfo> fileInfoList = new PriorityBlockingQueue<>();
 
-    public ScanProcessor(Path dir, List<String> excludedDirs) {
+    public ScanProcessorBQ(Path dir, List<String> excludedDirs) {
         this.dir = dir;
         this.excludedDirs = excludedDirs;
     }
@@ -38,9 +42,9 @@ public class ScanProcessor extends RecursiveTask<HashSet<FileInfo>> {
       * @return
      */
     @Override
-    protected HashSet<FileInfo> compute() {
+    protected PriorityBlockingQueue<FileInfo> compute() {
 
-        final List<ScanProcessor> walks = new ArrayList<>();
+        final List<ScanProcessorBQ> walks = new ArrayList<>();
         try {
             Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
                 /**
@@ -49,8 +53,8 @@ public class ScanProcessor extends RecursiveTask<HashSet<FileInfo>> {
                  */
                 @Override
                 public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-                    if (!dir.equals(ScanProcessor.this.dir)) {
-                        ScanProcessor w = new ScanProcessor(dir, excludedDirs);
+                    if (!dir.equals(ScanProcessorBQ.this.dir)) {
+                        ScanProcessorBQ w = new ScanProcessorBQ(dir, excludedDirs);
                         w.fork();
                         walks.add(w);
                         return FileVisitResult.SKIP_SUBTREE;
@@ -72,7 +76,9 @@ public class ScanProcessor extends RecursiveTask<HashSet<FileInfo>> {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-                    fileInfoList.add(new FileInfo(file.toString(), simpleDateFormat.format(attrs.lastModifiedTime().toMillis()), attrs.size()));
+
+                    fileInfoList.put(new FileInfo(file.toString(), simpleDateFormat.format(attrs.lastModifiedTime().toMillis()), attrs.size()));
+
                     return FileVisitResult.CONTINUE;
                 }
 
@@ -84,7 +90,7 @@ public class ScanProcessor extends RecursiveTask<HashSet<FileInfo>> {
 
                 @Override
                 public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-
+                    writefoToFile(fileInfoList);
                     return FileVisitResult.CONTINUE;
                 }
             });
@@ -95,12 +101,29 @@ public class ScanProcessor extends RecursiveTask<HashSet<FileInfo>> {
         return fileInfoList;
     }
 
-    private void addResultsFromTasks(HashSet<FileInfo> list, List<ScanProcessor> walks)
+    private void addResultsFromTasks(PriorityBlockingQueue<FileInfo> list, List<ScanProcessorBQ> walks)
     {
-        for (ScanProcessor item : walks)
+        for (ScanProcessorBQ item : walks)
         {
             list.addAll(item.join());
         }
     }
 
+    /**
+     * Запись в файл
+     * @param fileInfoList
+     */
+    public static void writefoToFile(PriorityBlockingQueue<FileInfo> fileInfoList) {
+        Path fileP = Paths.get(FILENAME);
+        Charset charset = Charset.forName("utf-8");
+
+        try (BufferedWriter writer = Files.newBufferedWriter(fileP, charset, StandardOpenOption.APPEND, StandardOpenOption.CREATE)) {
+            for (FileInfo fileInfo : fileInfoList) {
+                writer.write(fileInfo.toString());
+                //writer.newLine();
+            }
+        } catch (IOException e) {
+            ToLog.writeMessage(e.getMessage());
+        }
+    }
 }
